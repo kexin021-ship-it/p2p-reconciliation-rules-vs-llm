@@ -1,9 +1,0 @@
-po,problem_key,cause_category,explanation,action
-P00011,purchase.order.line:2,po_price_error,Cable Tray (section): PO price 8 differs from agreed price 18; vendor billed agreed price 18.,Correct PO price and adjust inventory valuation.
-P00012,account.move.line:5,timing,Wireless Keyboard: received 30 but billed 26 at 2026-10-31; remaining quantity not yet billed.,No error; accrue 160 goods received not invoiced.
-P00013,account.move.line:14,vendor_underbilled,Business Cards (box): bill price 19 is below PO/agreed price 20.,Confirm with vendor; a supplementary bill of 100 may follow.
-P00015,account.move.line:4,vendor_overbilled,A4 Notebooks (box): billed 40 vs net received 36 at 2026-10-31; vendor billed more than was received.,Request credit note for 72.
-P00017,account.move.line:7,vendor_underbilled,Coffee Beans (kg): bill price 30 is below PO/agreed price 32.,Confirm with vendor; a supplementary bill of 100 may follow.
-P00018,stock.picking:11,timing,Cleaning Detergent (drum): received 40 but billed 0 at 2026-10-31; bill BILL/2026/11/0001 arrived after month-end.,No error; accrue 1200 goods received not invoiced at month-end.
-P00019,account.move.line:16,vendor_overbilled,Safety Helmet: billed 120 vs net received 60 at 2026-10-31; vendor billed more than was received.,Request credit note for 2100.
-P00020,stock.picking:6,timing,Packing Tape (case): received 30 but billed 0 at 2026-10-31; bill BILL/2026/11/0002 arrived after month-end.,No error; accrue 1200 goods received not invoiced at month-end.
