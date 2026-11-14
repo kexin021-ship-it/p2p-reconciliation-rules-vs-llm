@@ -1,0 +1,4 @@
+__pycache__/
+# unzipped copies written by make_data.py / make_test_data.py (the zips in data/ are the source)
+data/odoo_p2p_10po/
+data/odoo_p2p_test/
