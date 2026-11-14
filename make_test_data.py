@@ -14,6 +14,7 @@ from collections import defaultdict
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 OUT = "odoo_p2p_test"
+DATA_DIR = f"data/{OUT}"      # unzipped tables; the zip goes to data/{OUT}.zip
 PERIOD, CUTOFF, RUN_DATE = "2026-10", "2026-10-31", "2026-11-10"
 
 # ---------------------------------------------------------------------------------------------
@@ -138,7 +139,7 @@ DESIGNS = [
 
 
 def build():
-    os.makedirs(OUT, exist_ok=True)
+    os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs("answer_key", exist_ok=True)
     # shuffle PO numbers so the order says nothing about the answer
     order = list(range(len(DESIGNS)))
@@ -253,11 +254,11 @@ def build():
         "mail_message": (["id", "model", "res_id", "record_name", "date", "author", "body"], notes),
     }
     for name, (header, rows) in tables.items():
-        with open(f"{OUT}/{name}.csv", "w", newline="", encoding="utf-8") as f:
+        with open(f"{DATA_DIR}/{name}.csv", "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f); w.writerow(header); w.writerows(rows)
-    with zipfile.ZipFile(f"{OUT}.zip", "w") as z:
+    with zipfile.ZipFile(f"data/{OUT}.zip", "w") as z:
         for name in tables:
-            z.write(f"{OUT}/{name}.csv", f"{OUT}/{name}.csv")
+            z.write(f"{DATA_DIR}/{name}.csv", f"{OUT}/{name}.csv")
 
     # answer key (October figures computed from the generated tables)
     line_po = {l["id"]: l["order_id"] for l in polines}

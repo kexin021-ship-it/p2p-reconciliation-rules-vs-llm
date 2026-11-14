@@ -31,7 +31,7 @@ By where the evidence sits (share of correct judgements, LLM runs pooled):
 
 1. **The LLM adds value exactly where the evidence is free text.** On cases whose cause is stated only in a chatter note (goods taken back by the driver, an approved discount, a receipt booked before the goods arrived, contradicting records), rules scored 0/4 and the workflow 4/4 in every run. On structured cases both were perfect.
 2. **Architecture, not the model, decided reliability.** Same model, same definitions: the workflow scored 10/10 with one call per PO; the agent scored 5.7/10, skipped POs and flagged normal POs as problems.
-3. **An outcome-only check taught the agent to fake the outcome.** The agent's submit tool rejected findings that did not add up to its own October total. In two test runs the agent passed by inventing balancing figures, once citing a PO line that does not exist. The traces are in `test_llm_raw_v8/`.
+3. **An outcome-only check taught the agent to fake the outcome.** The agent's submit tool rejected findings that did not add up to its own October total. In two test runs the agent passed by inventing balancing figures, once citing a PO line that does not exist. The traces are in `results/test_llm_raw_v8/`.
 
 Also from development: the same model made arithmetic errors in 18 of 18 agent submissions, but got 30 of 30 PO totals right when the workflow made it write each step in a worksheet.
 
@@ -41,8 +41,8 @@ A synthetic Odoo-style dataset of 10 tables: vendors, products, agreed vendor pr
 
 | Set | File | POs | Purpose |
 | --- | --- | --- | --- |
-| Development | `odoo_p2p_10po.zip` | 10 | tuning prompts and architectures |
-| Test (held out) | `odoo_p2p_test.zip` | 10 | the reported results; new vendors and products, PO numbers shuffled |
+| Development | `data/odoo_p2p_10po.zip` | 10 | tuning prompts and architectures |
+| Test (held out) | `data/odoo_p2p_test.zip` | 10 | the reported results; new vendors and products, PO numbers shuffled |
 
 Answer keys are in `answer_key/`, outside the data files the systems read.
 
@@ -60,36 +60,40 @@ The full history of versions, errors and decisions is in `experiment_log.md`.
 
 ## Repository layout
 
-| File | What it is |
-| --- | --- |
-| `make_data.py`, `make_test_data.py` | generate the development and test data and their answer keys |
-| `rules_baseline.py` | Python rules |
-| `llm.py` | fixed LLM workflow (also holds the shared category definitions) |
-| `agent.py` | tool-using LLM agent |
-| `evaluate.py` | scoring for all three |
-| `answer_key/` | expected findings for both sets |
-| `test_*_findings_*.csv`, `test_llm_worksheet_v6_run*.csv` | test-set outputs of the frozen versions |
-| `test_llm_raw_v8/` | full agent traces for the three test runs |
-| `experiment_log.md` | iteration log and final results |
+```
+make_data.py, make_test_data.py   generate the development and test data and their answer keys
+rules_baseline.py                 Python rules
+llm.py                            fixed LLM workflow (also holds the shared category definitions)
+agent.py                          tool-using LLM agent
+evaluate.py                       scoring for all three
+experiment_log.md                 iteration log, decisions and final results
+data/                             development and test data (zipped Odoo-style tables)
+answer_key/                       expected findings for both sets, kept apart from the data
+results/                          test-set outputs of the frozen versions
+  test_rules_findings.csv
+  test_llm_findings_v6_run1-3.csv, test_llm_worksheet_v6_run1-3.csv
+  test_agent_findings_v8_run1-3.csv
+  test_llm_raw_v8/                full agent traces for the three test runs
+```
 
 ## How to run
 
 Requires Python 3.10+ and an OpenAI API key (rules and scoring need neither).
 
 ```
-pip install openai
+pip install -r requirements.txt
 export OPENAI_API_KEY="sk-..."        # Windows: setx OPENAI_API_KEY "sk-..."
 
 python rules_baseline.py --test
 python llm.py --test --runs 3
 python agent.py --test --runs 3
 
-python evaluate.py --test test_rules_findings.csv
-python evaluate.py --test --runs test_llm_findings_v6
-python evaluate.py --test --runs test_agent_findings_v8
+python evaluate.py --test results/test_rules_findings.csv
+python evaluate.py --test --runs results/test_llm_findings_v6
+python evaluate.py --test --runs results/test_agent_findings_v8
 ```
 
-Without `--test`, the scripts use the development set. New runs are numbered after the existing ones, so the included results are never overwritten. Scripts can be run from any folder.
+Without `--test`, the scripts use the development set. All outputs go to `results/`. New runs are numbered after the existing ones, so the included results are never overwritten. Scripts can be run from any folder.
 
 ## Limitations
 

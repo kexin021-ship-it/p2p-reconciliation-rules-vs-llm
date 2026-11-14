@@ -2,7 +2,7 @@
 
 Reads ONLY the structured Odoo tables (mail_message is deliberately ignored),
 checks every PO line as at month-end (documents after CUTOFF are only used as later evidence),
-and writes one finding per problem line to rules_findings.csv.
+and writes one finding per problem line to results/rules_findings.csv (results/test_rules_findings.csv with --test).
 
 Output columns (shared with the LLM agent so both can be scored by evaluate.py):
     po, problem_key, cause_category, explanation, action
@@ -14,10 +14,10 @@ from collections import defaultdict
 # Always work inside this script's own folder, wherever it is run from
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-DATA_ZIP = "odoo_p2p_10po.zip"
+DATA_ZIP = "data/odoo_p2p_10po.zip"
 PERIOD = "2026-10"          # month being reconciled
 CUTOFF = "2026-10-31"       # month-end: only documents dated up to here count
-OUT = "rules_findings.csv"
+OUT = "rules_findings.csv"   # written to results/
 
 
 def load(zip_path):
@@ -148,10 +148,12 @@ def run(t):
 
 if __name__ == "__main__":
     if "--test" in sys.argv[1:]:   # held-out test set; same logic
-        path, OUT = "odoo_p2p_test.zip", "test_" + OUT
+        path, OUT = "data/odoo_p2p_test.zip", "test_" + OUT
     else:
         path = sys.argv[1] if len(sys.argv) > 1 else DATA_ZIP
     findings = run(load(path))
+    os.makedirs("results", exist_ok=True)
+    OUT = "results/" + OUT
     with open(OUT, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["po", "problem_key", "cause_category", "explanation", "action"])

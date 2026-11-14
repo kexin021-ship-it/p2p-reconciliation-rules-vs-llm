@@ -9,11 +9,11 @@ Fixed workflow, one PO at a time:
 Usage (in the project folder's terminal):
   python llm.py --list-models     # show the model IDs your API key can use
   python llm.py --dry-run         # build case files only, no API call, no cost
-  python llm.py                   # one run of all 10 POs  -> llm_findings_v6_run<N>.csv + llm_worksheet_v6_run<N>.csv
+  python llm.py                   # one run of all 10 POs  -> results/llm_findings_v6_run<N>.csv + results/llm_worksheet_v6_run<N>.csv
   python llm.py --runs 2          # two runs in a row (run numbers continue from what already exists)
-  python llm.py --test --runs 3   # held-out test set -> test_llm_findings_v6_run<N>.csv (prompt unchanged)
-  python evaluate.py --runs llm_findings_v6                       # summary across all runs
-  python evaluate.py llm_findings_v6_run1.csv llm_worksheet_v6_run1.csv   # one run in detail, incl. arithmetic
+  python llm.py --test --runs 3   # held-out test set -> results/test_llm_findings_v6_run<N>.csv (prompt unchanged)
+  python evaluate.py --runs results/llm_findings_v6                       # summary across all runs
+  python evaluate.py results/llm_findings_v6_run1.csv results/llm_worksheet_v6_run1.csv   # one run in detail, incl. arithmetic
 
 v2 changes (2026-11-12, decided on the 10-PO dev set):
   1. explanation is written BEFORE cause_category / problem_key ("think, then answer")
@@ -63,13 +63,14 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 MODEL = "gpt-5.4-mini"        # change to any ID shown by --list-models
 REASONING_EFFORT = "none"     # gpt-5.4-mini default; temperature is only accepted with "none"
 TEMPERATURE = 0               # as stable as possible (OpenAI does not guarantee identical outputs)
-DATA_ZIP = "odoo_p2p_10po.zip"
-TEST_DATA_ZIP = "odoo_p2p_test.zip"   # held-out test set: run with --test (outputs get a "test_" prefix)
+DATA_ZIP = "data/odoo_p2p_10po.zip"
+TEST_DATA_ZIP = "data/odoo_p2p_test.zip"   # held-out test set: run with --test (outputs get a "test_" prefix)
 PERIOD = "2026-10"
 CUTOFF = "2026-10-31"         # month-end: only documents dated up to here count toward October figures
 RUN_DATE = "2026-11-10"
 OUT_PREFIX = "llm_findings_v6"          # + _run<N>.csv
 WORKSHEET_PREFIX = "llm_worksheet_v6"    # + _run<N>.csv
+RESULTS_DIR = "results"       # every output (findings, worksheets, raw replies) goes here
 RAW_DIR = "llm_raw_v6"        # case files + raw model replies, for checking the reasoning
 
 CATEGORIES = ["timing", "po_price_error", "vendor_overbilled", "vendor_underbilled", "approved_price_change",
@@ -289,8 +290,11 @@ def runs_requested(args):
 
 def next_run_number(prefix):
     """Next free run number, so new runs never overwrite earlier ones."""
-    done = [int(f[len(prefix) + 4:-4]) for f in os.listdir(".")
-            if f.startswith(prefix + "_run") and f.endswith(".csv") and f[len(prefix) + 4:-4].isdigit()]
+    folder, name = os.path.split(prefix)
+    folder = folder or "."
+    files = os.listdir(folder) if os.path.isdir(folder) else []
+    done = [int(f[len(name) + 4:-4]) for f in files
+            if f.startswith(name + "_run") and f.endswith(".csv") and f[len(name) + 4:-4].isdigit()]
     return max(done, default=0) + 1
 
 
@@ -321,6 +325,7 @@ def main():
     if "--test" in args:   # same prompt and logic; only the input data and output names change
         DATA_ZIP, OUT_PREFIX = TEST_DATA_ZIP, "test_" + OUT_PREFIX
         WORKSHEET_PREFIX, RAW_DIR = "test_" + WORKSHEET_PREFIX, "test_" + RAW_DIR
+    OUT_PREFIX, WORKSHEET_PREFIX, RAW_DIR = (f"{RESULTS_DIR}/{p}" for p in (OUT_PREFIX, WORKSHEET_PREFIX, RAW_DIR))
     os.makedirs(RAW_DIR, exist_ok=True)
     cases = build_cases(load(DATA_ZIP))
     for po, case in cases.items():

@@ -5,9 +5,10 @@ from collections import defaultdict
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 OUT = "odoo_p2p_10po"
-os.makedirs(OUT, exist_ok=True)
+DATA_DIR = f"data/{OUT}"      # unzipped tables; the zip goes to data/{OUT}.zip
+os.makedirs(DATA_DIR, exist_ok=True)
 
-def write(name, header, rows, folder=OUT):
+def write(name, header, rows, folder=DATA_DIR):
     with open(f"{folder}/{name}.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(header)
@@ -226,7 +227,7 @@ for po in sorted(po_name.values()):
     print(f"{po:8}{rec[po]:>10.0f}{ap[po]:>10.0f}{ap[po]-rec[po]:>10.0f}")
 print(f"{'TOTAL':8}{sum(rec.values()):>10.0f}{sum(ap.values()):>10.0f}{sum(ap.values())-sum(rec.values()):>10.0f}")
 
-with zipfile.ZipFile(f"{OUT}.zip", "w") as z:
-    for f in sorted(os.listdir(OUT)):
-        z.write(f"{OUT}/{f}", f"{OUT}/{f}")
-print(sorted(os.listdir(OUT)))
+with zipfile.ZipFile(f"data/{OUT}.zip", "w") as z:
+    for f in sorted(os.listdir(DATA_DIR)):
+        z.write(f"{DATA_DIR}/{f}", f"{OUT}/{f}")
+print(sorted(os.listdir(DATA_DIR)))

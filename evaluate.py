@@ -1,11 +1,11 @@
 """Score a findings file (from rules or from the LLM agent) against the answer key.
 
-Usage:  python evaluate.py rules_findings.csv
-        python evaluate.py llm_findings_v2_run1.csv llm_worksheet_v2_run1.csv   # also checks worksheet arithmetic
-        python evaluate.py --runs llm_findings_v2      # summary across llm_findings_v2_run1.csv, _run2.csv, ...
-        python evaluate.py --runs agent_findings_v2
-        python evaluate.py --test --runs test_llm_findings_v6   # held-out test set (uses the test answer key)
-        python evaluate.py --test test_rules_findings.csv
+Usage:  python evaluate.py results/rules_findings.csv
+        python evaluate.py results/llm_findings_v6_run1.csv results/llm_worksheet_v6_run1.csv   # also checks worksheet arithmetic
+        python evaluate.py --runs results/llm_findings_v6      # summary across results/llm_findings_v6_run1.csv, _run2.csv, ...
+        python evaluate.py --runs results/agent_findings_v8
+        python evaluate.py --test --runs results/test_llm_findings_v6   # held-out test set (uses the test answer key)
+        python evaluate.py --test results/test_rules_findings.csv
 For each PO it checks:
   - cause_ok:     a finding for this PO has the expected cause_category
   - location_ok:  that same finding points at an accepted problem_key
@@ -136,6 +136,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[1] == "--runs":
         summarize_runs(sys.argv[2])
     else:
-        main(sys.argv[1] if len(sys.argv) > 1 else "rules_findings.csv")
+        main(sys.argv[1] if len(sys.argv) > 1 else "results/rules_findings.csv")
         if len(sys.argv) > 2:
             check_worksheet(sys.argv[2])

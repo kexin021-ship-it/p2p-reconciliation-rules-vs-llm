@@ -5,12 +5,12 @@ prescribes the worksheet steps), here the LLM gets only the task and four tools.
 read, which POs to look at, which records to follow, and when it is done.
 
 Usage (in the project folder's terminal):
-  python agent.py                  # one run  -> agent_findings_v8_run<N>.csv
+  python agent.py                  # one run  -> results/agent_findings_v8_run<N>.csv
   python agent.py --runs 2         # two runs in a row (run numbers continue from what already exists)
-  python agent.py --test --runs 3  # held-out test set -> test_agent_findings_v8_run<N>.csv (prompt unchanged)
-  python evaluate.py --runs agent_findings_v8          # summary across all runs
-  python evaluate.py agent_findings_v8_run1.csv        # one run in detail
-Every tool call the agent makes is saved to llm_raw_v8/agent_trace_run<N>.json.
+  python agent.py --test --runs 3  # held-out test set -> results/test_agent_findings_v8_run<N>.csv (prompt unchanged)
+  python evaluate.py --runs results/agent_findings_v8          # summary across all runs
+  python evaluate.py results/agent_findings_v8_run1.csv        # one run in detail
+Every tool call the agent makes is saved to results/llm_raw_v8/agent_trace_run<N>.json.
 
 v2 changes (2026-11-12, decided on the 10-PO dev set):
   1. explanation is written BEFORE cause_category / problem_key
@@ -54,7 +54,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Same data, model, period and category definitions as the fixed workflow
 from llm import (load, build_cases, CATEGORIES, CATEGORY_TEXT, MODEL, REASONING_EFFORT, TEMPERATURE,
-                 DATA_ZIP, TEST_DATA_ZIP, PERIOD, RUN_DATE,
+                 DATA_ZIP, TEST_DATA_ZIP, PERIOD, RUN_DATE, RESULTS_DIR,
                  runs_requested, next_run_number, write_findings)
 
 RAW_DIR = "llm_raw_v8"   # agent v8 = v7 (calculator, cut-off, temperature 0) + llm.py v6 definition fixes
@@ -290,6 +290,7 @@ def main():
     data_zip = DATA_ZIP
     if "--test" in sys.argv[1:]:   # same prompt, tools and grader; only the input data and output names change
         data_zip, OUT_PREFIX, RAW_DIR = TEST_DATA_ZIP, "test_" + OUT_PREFIX, "test_" + RAW_DIR
+    OUT_PREFIX, RAW_DIR = f"{RESULTS_DIR}/{OUT_PREFIX}", f"{RESULTS_DIR}/{RAW_DIR}"
     from openai import OpenAI
     client = OpenAI()   # reads OPENAI_API_KEY
     tables = load(data_zip)

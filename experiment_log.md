@@ -527,3 +527,37 @@ Conclusions:
 Limitations: n = 10 POs, designed by the same two people who saw the dev-set results, so the workflow's 10/10 shows
 reliability on these patterns, not a general accuracy figure; no cross-PO cases (no category; all three versions
 would fail by design); single model (gpt-5.4-mini).
+
+## Repository tidy-up (2026-11-14, file locations only)
+
+Files moved into folders so the repository root holds only the scripts and docs: data zips -> `data/`,
+test-set outputs and agent traces -> `results/`. Added `requirements.txt` and `.gitignore`.
+Code changes are limited to file paths (data read from `data/`, every output written to `results/`, run numbering
+looks in `results/`) and the usage notes in the docstrings. No prompt, tool, grader, rules or scoring logic changed.
+
+Checked after the move:
+- `make_data.py` / `make_test_data.py` regenerate both data zips with identical table contents, and both answer keys
+  byte for byte.
+- `rules_baseline.py --test` reproduces `results/test_rules_findings.csv` byte for byte.
+- `evaluate.py` on the stored results gives the same scores as before: rules 6 / 6 / 1; workflow v6 10.0 / 10.0 / 0.0
+  (worksheet totals 10/10 in each run); agent v8 5.7 / 4.7 / 4.7.
+- `llm.py --test --dry-run` builds the 10 case files; new LLM / agent runs would be numbered run 4 onwards.
+
+Fingerprints after the move (method as before: SHA-256, first 16 hex chars, line endings normalised for text files):
+
+| File | Fingerprint |
+|---|---|
+| `rules_baseline.py` | 87d4d8a79ae3ec56 |
+| `llm.py` | 1fd59c775081b924 |
+| `agent.py` | 3435490163bc46fc |
+| `evaluate.py` | 2bb2b5e2897533b6 |
+| `make_data.py` | 5723afd5b966d4ab |
+| `make_test_data.py` | c18d3732f193f695 |
+| `data/odoo_p2p_test.zip` | 8b7bb7cbcdd862e2 (unchanged) |
+| `data/odoo_p2p_10po.zip` | 85874d1dde7b08c9 |
+| `answer_key/test_expected_findings.csv` | e8b1f028d185b7da (unchanged) |
+| `answer_key/expected_findings.csv` | 91f84be9d8d4c705 (unchanged) |
+
+Note: `odoo_p2p_10po.zip` was copied unchanged (file dated 9 Nov), but its fingerprint does not match the one recorded
+in the 13 Nov freeze table (a1d41ddb4e2fb4af); the cause could not be traced. Its contents are exactly what
+`make_data.py` generates.
