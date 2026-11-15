@@ -561,3 +561,29 @@ Fingerprints after the move (method as before: SHA-256, first 16 hex chars, line
 Note: `odoo_p2p_10po.zip` was copied unchanged (file dated 9 Nov), but its fingerprint does not match the one recorded
 in the 13 Nov freeze table (a1d41ddb4e2fb4af); the cause could not be traced. Its contents are exactly what
 `make_data.py` generates.
+
+## Scoring fix (2026-11-14, evaluate.py only)
+
+Two gaps found in a review of evaluate.py; no change to rules, prompts, tools, data or answer keys.
+1. Repeated findings were free. A problem PO was scored on "any finding has the right category", and a second
+   finding on the accepted record was not counted as extra. Example: test agent run 2 reported P00011 twice on
+   purchase_order_line:2 - the second one is the fabricated -2,328 balancing figure - and scored 0 extra.
+   New rule (one problem = one finding): every finding beyond the first on the accepted record(s) counts as extra;
+   findings on PO numbers that are not in the answer key also count as extra (none occurred so far).
+2. A failed run did not score 0 on the test set. An empty findings file left the two "none" POs with no finding,
+   so they were scored right (2/10 instead of the agreed all-wrong). Now an empty findings file scores every PO
+   as wrong. No test run failed, and the dev set has no "none" PO, so no reported figure changes from this fix.
+   Checked with an empty file on the test set: 0 / 0 / 0.
+
+Re-scored test results:
+
+| | Rules | Workflow v6 | Agent v8 |
+|---|---|---|---|
+| Cause correct, mean | 6 / 10 (unchanged) | 10 / 10 (unchanged) | 5.7 / 10 (unchanged) |
+| Cause + location, mean | 6 / 10 (unchanged) | 10 / 10 (unchanged) | 4.7 / 10 (unchanged) |
+| Extra findings, mean | 1 (unchanged) | 0 (unchanged) | 5.0 (was 4.7; run 2: 5, was 4) |
+
+Rules on the dev set: 7 / 7 / 1, unchanged. Dev-set figures earlier in this log were scored with the old rule and
+are left as recorded.
+
+Fingerprint after the fix: `evaluate.py` f65b21f4aa96af86 (all other files as in the tidy-up table above).

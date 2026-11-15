@@ -16,7 +16,7 @@ Both LLM designs use the same model (gpt-5.4-mini, temperature 0), the same eigh
 | --- | --- | --- | --- |
 | Cause correct (of 10) | 6.0 | **10.0** | 5.7 |
 | Cause and location correct (of 10) | 6.0 | **10.0** | 4.7 |
-| Extra findings per run | 1.0 | **0.0** | 4.7 |
+| Extra findings per run | 1.0 | **0.0** | 5.0 |
 | Model calls per run | 0 | 10 | 13 to 60 |
 
 By where the evidence sits (share of correct judgements, LLM runs pooled):
@@ -52,9 +52,9 @@ Cause categories: `timing`, `po_price_error`, `vendor_overbilled`, `vendor_under
 
 - **Cause correct**: a finding on the PO has the expected category.
 - **Cause and location correct**: that finding also points at the right record (PO line, receipt or bill line).
-- **Extra findings**: findings on records that are not the problem; on a normal PO any finding counts.
+- **Extra findings**: findings on records that are not the problem, repeated findings on the problem record (one problem = one finding) and findings on POs that do not exist; on a normal PO any finding counts.
 - Prompts and logic were tuned only on the development set, then frozen with file fingerprints before the test set was built.
-- Each LLM design ran 3 times; a run that ends without accepted findings counts as all 10 POs wrong.
+- Each LLM design ran 3 times; a run that ends without accepted findings counts as all 10 POs wrong, including the normal POs.
 
 The full history of versions, errors and decisions is in `experiment_log.md`.
 

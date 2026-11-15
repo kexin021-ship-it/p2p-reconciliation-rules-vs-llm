@@ -9,9 +9,18 @@ Usage:  python evaluate.py results/rules_findings.csv
 For each PO it checks:
   - cause_ok:     a finding for this PO has the expected cause_category
   - location_ok:  that same finding points at an accepted problem_key
-  - extra:        findings on this PO that don't match the expected key (false alarms)
+  - extra:        findings beyond the one the PO needs (false alarms and repeats):
+                  every finding that points at a record other than the accepted problem_key(s), plus
+                  every additional finding on the accepted record(s) - one problem = one finding
 A PO whose expected cause_category is "none" should get NO finding: it is right only if nothing was
-reported, and every finding on it counts as extra.
+reported, and every finding on it counts as extra. Findings on PO numbers that are not in the answer
+key also count as extra.
+A failed run (the agent ended without accepted findings and left an empty findings file) scores
+every PO as wrong, including the POs that expect no finding.
+
+Scoring change 2026-11-14: repeats on the accepted record, findings on unknown POs and the failed-run
+rule above were added (before, a repeated finding on the right record was not counted, and an empty
+file scored the "none" POs as right).
 """
 import csv, glob, os, re, sys
 from collections import defaultdict
@@ -31,28 +40,52 @@ def norm(key):
     return table.replace("_", ".") + ":" + rid.strip()
 
 
+def read_findings(path):
+    with open(path, encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
+def is_failed_run(path):
+    """agent.py saves a run that ended without accepted findings as an empty findings file."""
+    return not read_findings(path)
+
+
+def unknown_po_findings(findings_path):
+    """Findings on PO numbers that are not in the answer key (they count as extra)."""
+    expected = {r["po"] for r in csv.DictReader(open(KEY, encoding="utf-8"))}
+    return [f for f in read_findings(findings_path) if f["po"] not in expected]
+
+
 def score(findings_path):
     """Per-PO results for one findings file."""
     expected = {r["po"]: r for r in csv.DictReader(open(KEY, encoding="utf-8"))}
+    findings = read_findings(findings_path)
+    failed = not findings
     found = defaultdict(list)
-    for r in csv.DictReader(open(findings_path, encoding="utf-8")):
+    for r in findings:
         found[r["po"]].append(r)
 
     rows, n_cause, n_loc, n_extra = [], 0, 0, 0
     for po, exp in expected.items():
         keys = [norm(k) for k in exp["problem_keys"].split("|") if k.strip()]
         fs = found.get(po, [])
-        if exp["cause_category"] == "none":          # nothing should be reported on this PO
+        if failed:                                   # no accepted findings at all: every PO is wrong
+            cause_ok = loc_ok = False
+            extra = 0
+        elif exp["cause_category"] == "none":        # nothing should be reported on this PO
             cause_ok = loc_ok = not fs
             extra = len(fs)
         else:
             cause_ok = any(f["cause_category"] == exp["cause_category"] for f in fs)
             loc_ok = any(f["cause_category"] == exp["cause_category"] and norm(f["problem_key"]) in keys for f in fs)
-            extra = sum(1 for f in fs if norm(f["problem_key"]) not in keys)
+            off_key = sum(1 for f in fs if norm(f["problem_key"]) not in keys)
+            on_key = len(fs) - off_key
+            extra = off_key + max(on_key - 1, 0)    # one problem = one finding: repeats count as extra
         got = "; ".join(f"{f['cause_category']} @ {f['problem_key']}" for f in fs) or "(no finding)"
         n_cause += cause_ok; n_loc += loc_ok; n_extra += extra
         rows.append((po, exp["key_evidence"], exp["cause_category"], got,
                      "Y" if cause_ok else "N", "Y" if loc_ok else "N", extra))
+    n_extra += len(unknown_po_findings(findings_path))
     return rows, n_cause, n_loc, n_extra
 
 
@@ -62,6 +95,10 @@ def main(findings_path):
     print(f"{'PO':7} {'evidence':10} {'expected':22} {'cause':5} {'loc':4} {'extra':5} got")
     for po, ev, ec, got, c, l, x in rows:
         print(f"{po:7} {ev:10} {ec:22} {c:5} {l:4} {x:<5} {got}")
+    if is_failed_run(findings_path):
+        print("\nFAILED RUN (no findings submitted): every PO scored as wrong")
+    for f in unknown_po_findings(findings_path):
+        print(f"Finding on a PO not in the answer key (counted as extra): {f['po']} {f['cause_category']} @ {f['problem_key']}")
     print(f"\nCause correct:     {n_cause}/{n}")
     print(f"Cause + location:  {n_loc}/{n}")
     print(f"Extra findings:    {n_extra}")
@@ -103,7 +140,7 @@ def summarize_runs(prefix):
                 print(f"{'':42}run {k}: {r[0][i][3]}")
     print(f"\n{'':7} {'run':>4} {'cause':>6} {'cause+loc':>10} {'extra':>6}")
     for k, (rows, c, l, x) in enumerate(results, 1):
-        failed = os.path.getsize(files[k - 1]) < 60 or not list(csv.DictReader(open(files[k - 1], encoding="utf-8")))
+        failed = is_failed_run(files[k - 1])
         print(f"{'':7} {k:>4} {c:>4}/10 {l:>8}/10 {x:>6}" + ("   <- failed run (no findings submitted)" if failed else ""))
     mean = lambda j: sum(r[j] for r in results) / n_runs
     print(f"{'':7} {'mean':>4} {mean(1):>7.1f} {mean(2):>10.1f} {mean(3):>6.1f}")
