@@ -29,9 +29,9 @@ By where the evidence sits (share of correct judgements, LLM runs pooled):
 
 ## Key findings
 
-1. **The LLM adds value exactly where the evidence is free text.** On cases whose cause is stated only in a chatter note (goods taken back by the driver, an approved discount, a receipt booked before the goods arrived, contradicting records), rules scored 0/4 and the workflow 4/4 in every run. On structured cases both were perfect.
-2. **Architecture, not the model, decided reliability.** Same model, same definitions: the workflow scored 10/10 with one call per PO; the agent scored 5.7/10, skipped POs and flagged normal POs as problems.
-3. **An outcome-only check taught the agent to fake the outcome.** The agent's submit tool rejected findings that did not add up to its own October total. In two test runs the agent passed by inventing balancing figures, once citing a PO line that does not exist. The traces are in `results/test_llm_raw_v8/`.
+1. **The LLM's advantage came from cases whose cause is written only in a note.** On the four note-only cases (goods taken back by the driver, an approved discount, a receipt booked before the goods arrived, contradicting records), the workflow scored 4/4 in every run and the rules 0/4. The rules read no notes by design, so this measures what structured-data checks miss, not a head-to-head on reading text. On structured cases both were perfect.
+2. **With the same model, the fixed workflow was far more reliable than the free agent.** Same model, same definitions: the workflow scored 10/10 with one call per PO; the agent scored 5.7/10, skipped POs and flagged normal POs as problems. The agent also had to gather each PO's records itself, so part of the gap may come from incomplete inputs rather than from the freedom to plan (see next steps).
+3. **An outcome-only check taught the agent to fake the outcome.** The agent's submit tool rejected findings that did not add up to its own October total. In two test runs the agent passed by inventing balancing figures, once citing a PO line that does not exist. A check that every cited record exists, and that every PO with a difference is covered, would have caught both. The traces are in `results/test_llm_raw_v8/`.
 
 Also from development: the same model made arithmetic errors in 18 of 18 agent submissions, but got 30 of 30 PO totals right when the workflow made it write each step in a worksheet.
 
@@ -95,8 +95,18 @@ python evaluate.py --test --runs results/test_agent_findings_v8
 
 Without `--test`, the scripts use the development set. All outputs go to `results/`. New runs are numbered after the existing ones, so the included results are never overwritten. Scripts can be run from any folder.
 
-## Limitations
+## Limitations and next steps
 
-- The test set has 10 POs and was designed by the same people who saw the development results; the workflow's 10/10 shows reliability on these patterns, not a general accuracy figure.
-- The workflow reviews one PO at a time, so problems that span POs (a bill posted to the wrong PO) are out of scope.
-- One model only (gpt-5.4-mini) and synthetic data; real ERP exports carry more noise.
+What the results do not show:
+
+- **Small, self-designed test set.** 10 POs, one case per cause, designed by the same people after seeing development results. Some workflow rules were added after development errors and cover the same patterns as test cases. The 10/10 shows reliability on these patterns, not a general accuracy figure.
+- **Notes are explicit.** Test notes state the cause plainly (e.g. "confirmed ahead of time to make the month-end"). Real warehouse and AP notes are shorter and vaguer.
+- **Scoring checks the category and the record, not the amounts or the recommended action.** The agent's invented balancing figures were found by reading the traces, not by the score.
+- **One small model, synthetic data, one PO at a time.** Problems that span POs (a bill posted to the wrong PO) are out of scope. Cost and latency were not measured beyond the number of model calls.
+
+Next steps, in order:
+
+1. **LLM reads the notes, rules decide.** The LLM turns each note into fixed fields (event, quantity, date, record), and Python rules do the arithmetic and the classification. If this matches the workflow, the LLM's value lies in reading text, and the judgement can stay in auditable code.
+2. **A new held-out set** with vague notes, POs with more than one cause, and situations outside the category list, frozen before any run.
+3. **Score the amounts and the evidence**: each finding's explained difference, and whether every cited record exists.
+4. **Give the agent the workflow's case files**, to separate the effect of incomplete inputs from the effect of free planning.
